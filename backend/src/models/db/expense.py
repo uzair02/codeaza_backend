@@ -1,14 +1,18 @@
 import uuid
-from datetime import datetime, date
-from sqlalchemy import Boolean, String, Float, Text, ForeignKey, Date, TIMESTAMP
-from sqlalchemy.dialects.postgresql import UUID, BYTEA
+from datetime import date, datetime
+
+from sqlalchemy import Boolean, Date, Float, ForeignKey, String, Text, TIMESTAMP
+from sqlalchemy.dialects.postgresql import BYTEA, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from src.repository.database import Base
+
 
 class Expense(Base):
     """
     Represents an expense in the system.
     """
+
     __tablename__ = "expenses"
 
     expenses_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -21,7 +25,9 @@ class Expense(Base):
     description: Mapped[str] = mapped_column(Text, nullable=True)
     invoice_image: Mapped[bytes] = mapped_column(BYTEA, nullable=True)
     employee: Mapped[str] = mapped_column(String, nullable=True)
-    updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=False), default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False), default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     user = relationship("User", back_populates="expenses")
     category = relationship("Category", back_populates="expenses")

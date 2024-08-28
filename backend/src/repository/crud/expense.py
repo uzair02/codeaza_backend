@@ -1,13 +1,13 @@
 from uuid import UUID
 
 import pendulum
-
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from src.config.settings.logger_config import logger
 from src.models.db.expense import Expense as ExpenseModel
 from src.models.schemas.expense import ExpenseCreate, ExpenseUpdate
+
 
 async def create_expense(db: AsyncSession, user_id: UUID, expense: ExpenseCreate) -> ExpenseModel:
     """
@@ -24,16 +24,18 @@ async def create_expense(db: AsyncSession, user_id: UUID, expense: ExpenseCreate
         RuntimeError: If there is an error creating the expense.
     """
     try:
-        db_expense = ExpenseModel(subject=expense.subject,
-                                  expense_date=expense.expense_date,
-                                  reimbursable=expense.reimbursable,
-                                  amount=expense.amount,
-                                  description=expense.description,
-                                  invoice_image=expense.invoice_image,
-                                  employee=expense.employee,
-                                  category_id=expense.category_id,
-                                  user_id=user_id,
-                                  updated_at=pendulum.now().naive())
+        db_expense = ExpenseModel(
+            subject=expense.subject,
+            expense_date=expense.expense_date,
+            reimbursable=expense.reimbursable,
+            amount=expense.amount,
+            description=expense.description,
+            invoice_image=expense.invoice_image,
+            employee=expense.employee,
+            category_id=expense.category_id,
+            user_id=user_id,
+            updated_at=pendulum.now().naive(),
+        )
         db.add(db_expense)
         await db.commit()
         await db.refresh(db_expense)
@@ -42,6 +44,7 @@ async def create_expense(db: AsyncSession, user_id: UUID, expense: ExpenseCreate
     except Exception as e:
         logger.error(f"Error creating expense: {e}")
         raise RuntimeError("Error creating expense") from e
+
 
 async def get_expense_by_id(db: AsyncSession, expense_id: UUID) -> ExpenseModel:
     """
@@ -74,6 +77,7 @@ async def get_expense_by_id(db: AsyncSession, expense_id: UUID) -> ExpenseModel:
         logger.error(f"Error retrieving expense with ID {expense_id}: {e}")
         raise RuntimeError("Error retrieving expense") from e
 
+
 async def get_expenses(db: AsyncSession) -> list[ExpenseModel]:
     """
     Retrieve all expenses asynchronously.
@@ -97,9 +101,8 @@ async def get_expenses(db: AsyncSession) -> list[ExpenseModel]:
         logger.error(f"Error retrieving expenses: {e}")
         raise RuntimeError("Error retrieving expenses") from e
 
-async def update_expense(
-        db: AsyncSession, expense_id: UUID, expense_update: ExpenseUpdate
-        ) -> ExpenseModel:
+
+async def update_expense(db: AsyncSession, expense_id: UUID, expense_update: ExpenseUpdate) -> ExpenseModel:
     """
     Update an expense by ID asynchronously.
 
@@ -150,6 +153,7 @@ async def update_expense(
     except Exception as e:
         logger.error(f"Error updating expense with ID {expense_id}: {e}")
         raise RuntimeError("Error updating expense") from e
+
 
 async def delete_expense(db: AsyncSession, expense_id: UUID) -> bool:
     """

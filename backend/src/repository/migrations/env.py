@@ -7,8 +7,8 @@ from sqlalchemy import engine_from_config, pool
 # Load the project's settings
 from src.config.settings.base import config_env
 from src.models.db.category import Category
-from src.models.db.user import User
 from src.models.db.expense import Expense
+from src.models.db.user import User
 
 # Import your Base model
 from src.repository.database import Base

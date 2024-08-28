@@ -1,5 +1,6 @@
 from uuid import UUID
 
+
 ### Details for Category
 def category_not_found(category_id: UUID) -> str:
     return f"No category found with ID '{category_id}'. Please check the ID and try again."
@@ -51,31 +52,38 @@ def unexpected_error_list() -> str:
 def expense_not_found(expense_id: UUID) -> str:
     return f"No expense found with ID '{expense_id}'. Please check the ID and try again."
 
+
 def expense_exists(name: str) -> str:
     return f"Expense with name '{name}' already exists. Please choose a different name."
+
 
 def expense_update_not_found(expense_id: UUID) -> str:
     return f"No expense found with ID '{expense_id}' for update. Please check the ID and try again."
 
+
 def expense_deletion_not_found(expense_id: UUID) -> str:
     return f"No expense found with ID '{expense_id}' for deletion. Please check the ID and try again."
+
 
 def expense_unexpected_error_create(subject: str) -> str:
     return f"An unexpected error occurred while creating the expense '{subject}'. Please try again later."
 
+
 def expense_unexpected_error_retrieve_by_id(expense_id: UUID) -> str:
-    return (
-        f"An unexpected error occurred while retrieving the expense with ID '{expense_id}'. Please try again later."
-    )
+    return f"An unexpected error occurred while retrieving the expense with ID '{expense_id}'. Please try again later."
+
 
 def expense_unexpected_error_retrieve_by_name(name: str) -> str:
     return f"An unexpected error occurred while retrieving the expense with name '{name}'. Please try again later."
 
+
 def expense_unexpected_error_update(expense_id: UUID) -> str:
     return f"An unexpected error occurred while updating the expense with ID '{expense_id}'. Please try again later."
 
+
 def expense_unexpected_error_delete(expense_id: UUID) -> str:
     return f"An unexpected error occurred while deleting the expense with ID '{expense_id}'. Please try again later."
+
 
 def expense_unexpected_error_list() -> str:
     return "An unexpected error occurred while retrieving the list of expenses. Please try again later."

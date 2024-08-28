@@ -1,33 +1,29 @@
 from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi_pagination import add_pagination, paginate, Params
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.settings.logger_config import logger
-from src.models.schemas.expense import Expense as ExpenseSchema, ExpenseCreate, ExpenseUpdate, PagedExpense
 from src.models.schemas.error_response import ErrorResponse
+from src.models.schemas.expense import Expense as ExpenseSchema, ExpenseCreate, ExpenseUpdate, PagedExpense
 from src.models.schemas.user import User
-from src.securities.verification.credentials import get_current_user
-from src.repository.crud.expense import (
-    create_expense,
-    get_expenses,
-    get_expense_by_id,
-    update_expense,
-    delete_expense,
-)
+from src.repository.crud.expense import create_expense, delete_expense, get_expense_by_id, get_expenses, update_expense
 from src.repository.database import get_db
+from src.securities.verification.credentials import get_current_user
 from src.utilities.messages.exceptions.http.exc_details import (
     expense_deletion_not_found,
     expense_not_found,
-    expense_update_not_found,
     expense_unexpected_error_create,
     expense_unexpected_error_delete,
     expense_unexpected_error_list,
     expense_unexpected_error_retrieve_by_id,
     expense_unexpected_error_update,
+    expense_update_not_found,
 )
 
 router = APIRouter()
+
 
 @router.post(
     "/expenses",
@@ -38,9 +34,9 @@ router = APIRouter()
         500: {"model": ErrorResponse},
     },
 )
-async def create_expense_endpoint(expense: ExpenseCreate,
-                                  current_user: User = Depends(get_current_user),
-                                  db: AsyncSession = Depends(get_db)) -> ExpenseSchema:
+async def create_expense_endpoint(
+    expense: ExpenseCreate, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+) -> ExpenseSchema:
     """
     Create a new expense.
 
@@ -73,6 +69,7 @@ async def create_expense_endpoint(expense: ExpenseCreate,
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ).dict(),
         ) from e
+
 
 @router.get(
     "/expenses",
@@ -110,6 +107,7 @@ async def list_expenses_endpoint(
             ).dict(),
         ) from e
 
+
 @router.get(
     "/expenses/{expense_id}",
     response_model=ExpenseSchema,
@@ -118,9 +116,9 @@ async def list_expenses_endpoint(
         500: {"model": ErrorResponse},
     },
 )
-async def get_expense_endpoint(expense_id: UUID,
-                               current_user: User = Depends(get_current_user),
-                               db: AsyncSession = Depends(get_db)) -> ExpenseSchema:
+async def get_expense_endpoint(
+    expense_id: UUID, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+) -> ExpenseSchema:
     """
     Retrieve an expense by ID.
 
@@ -154,6 +152,7 @@ async def get_expense_endpoint(expense_id: UUID,
             ).dict(),
         ) from e
 
+
 @router.put(
     "/expenses/{expense_id}",
     response_model=ExpenseSchema,
@@ -166,7 +165,7 @@ async def update_expense_endpoint(
     expense_id: UUID,
     expense_update: ExpenseUpdate,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> ExpenseSchema:
     """
     Update an existing expense.
@@ -202,6 +201,7 @@ async def update_expense_endpoint(
             ).dict(),
         ) from e
 
+
 @router.delete(
     "/expenses/{expense_id}",
     responses={
@@ -209,9 +209,9 @@ async def update_expense_endpoint(
         500: {"model": ErrorResponse},
     },
 )
-async def delete_expense_endpoint(expense_id: UUID,
-                                  current_user: User = Depends(get_current_user),
-                                  db: AsyncSession = Depends(get_db)) -> dict:
+async def delete_expense_endpoint(
+    expense_id: UUID, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+) -> dict:
     """
     Delete an expense by ID.
 
@@ -244,5 +244,6 @@ async def delete_expense_endpoint(expense_id: UUID,
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ).dict(),
         ) from e
+
 
 add_pagination(router)
