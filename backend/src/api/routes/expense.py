@@ -1,6 +1,7 @@
 from uuid import UUID
-
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Optional
+import json
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from fastapi_pagination import add_pagination, paginate, Params
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -35,22 +36,31 @@ router = APIRouter()
     },
 )
 async def create_expense_endpoint(
-    expense: ExpenseCreate, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+    expense: str = Form(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    invoice_image: Optional[UploadFile] = File(None)
 ) -> ExpenseSchema:
     """
     Create a new expense.
 
     Args:
-        expense (ExpenseCreate): The expense data to create.
-        db (Session): The database session.
+        expense (str): The expense data to create, as a JSON string.
+        current_user (User): The current authenticated user.
+        db (AsyncSession): The database session.
+        invoice_image (UploadFile, optional): The invoice image file.
 
     Returns:
         ExpenseSchema: The created expense object.
     """
     try:
-        db_expense = await create_expense(db, current_user.user_id, expense)
+        # Parse the expense data from the JSON string
+        expense_data = json.loads(expense)
+        expense_obj = ExpenseCreate(**expense_data)
+
+        db_expense = await create_expense(db, current_user.user_id, expense_obj, invoice_image)
         logger.info(f"Expense created successfully with ID: {db_expense.expenses_id}")
-        return ExpenseSchema.from_orm(db_expense)
+        return ExpenseSchema.model_validate(db_expense)
     except ValueError as e:
         logger.error(f"Error creating expense: {e}")
         raise HTTPException(
@@ -58,16 +68,25 @@ async def create_expense_endpoint(
             detail=ErrorResponse(
                 detail=str(e),
                 status_code=status.HTTP_400_BAD_REQUEST,
-            ).dict(),
+            ).model_dump(),
+        ) from e
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON in expense data: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ErrorResponse(
+                detail="Invalid JSON in expense data",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            ).model_dump(),
         ) from e
     except Exception as e:
         logger.error(f"Unexpected error during expense creation: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponse(
-                detail=expense_unexpected_error_create(expense.subject),
+                detail=expense_unexpected_error_create(expense_obj.subject),
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            ).dict(),
+            ).model_dump(),
         ) from e
 
 
@@ -117,7 +136,9 @@ async def list_expenses_endpoint(
     },
 )
 async def get_expense_endpoint(
-    expense_id: UUID, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+    expense_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ) -> ExpenseSchema:
     """
     Retrieve an expense by ID.
@@ -210,7 +231,9 @@ async def update_expense_endpoint(
     },
 )
 async def delete_expense_endpoint(
-    expense_id: UUID, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+    expense_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ) -> dict:
     """
     Delete an expense by ID.
