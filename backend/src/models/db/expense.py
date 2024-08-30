@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime
 
 from sqlalchemy import Boolean, Date, Float, ForeignKey, String, Text, TIMESTAMP
-from sqlalchemy.dialects.postgresql import BYTEA, UUID
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.repository.database import Base
@@ -23,7 +23,7 @@ class Expense(Base):
     amount: Mapped[float] = mapped_column(Float, nullable=False)
     reimbursable: Mapped[bool] = mapped_column(Boolean, default=False)
     description: Mapped[str] = mapped_column(Text, nullable=True)
-    invoice_image: Mapped[bytes] = mapped_column(BYTEA, nullable=True)
+    invoice_image: Mapped[str] = mapped_column(String, nullable=True)
     employee: Mapped[str] = mapped_column(String, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=False), default=datetime.utcnow, onupdate=datetime.utcnow
