@@ -24,6 +24,7 @@ class Config:
         self.IS_ALLOWED_CREDENTIALS = os.getenv("IS_ALLOWED_CREDENTIALS")
         self.ALLOWED_METHODS = os.getenv("ALLOWED_METHODS")
         self.ALLOWED_HEADERS = os.getenv("ALLOWED_HEADERS")
+        self.INVOICE_UPLOAD_DIR: str = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), 'Invoices')
         self.ACCESS_TOKEN_EXPIRE_MINUTES = 30
         if self.SECRET_KEY is None:
             raise ValueError("No SECRET_KEY found in environment variables")
