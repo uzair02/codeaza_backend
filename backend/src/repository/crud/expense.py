@@ -1,21 +1,28 @@
-from uuid import UUID
+from uuid import UUID, uuid4
+from typing import Optional
+import os
+import aiofiles
 
 import pendulum
+from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from src.config.settings.logger_config import logger
+from src.config.settings.base import config_env
 from src.models.db.expense import Expense as ExpenseModel
 from src.models.schemas.expense import ExpenseCreate, ExpenseUpdate
 
 
-async def create_expense(db: AsyncSession, user_id: UUID, expense: ExpenseCreate) -> ExpenseModel:
+async def create_expense(db: AsyncSession, user_id: UUID, expense: ExpenseCreate, invoice_image: Optional[UploadFile] = None) -> ExpenseModel:
     """
     Create a new expense asynchronously.
 
     Args:
         db (AsyncSession): The database session.
+        user_id (UUID): The ID of the user creating the expense.
         expense (ExpenseCreate): The expense data to create.
+        invoice_image (Optional[UploadFile]): The invoice image file, if any.
 
     Returns:
         ExpenseModel: The created expense model.
@@ -24,13 +31,32 @@ async def create_expense(db: AsyncSession, user_id: UUID, expense: ExpenseCreate
         RuntimeError: If there is an error creating the expense.
     """
     try:
+        image_filename = None
+        if invoice_image and invoice_image.filename:
+            # Use the INVOICE_UPLOAD_DIR from settings
+            upload_dir = config_env.INVOICE_UPLOAD_DIR
+            os.makedirs(upload_dir, exist_ok=True)
+
+            file_extension = os.path.splitext(invoice_image.filename)[1]
+            image_filename = f"{uuid4()}{file_extension}"
+            file_path = os.path.join(upload_dir, image_filename)
+
+            try:
+                async with aiofiles.open(file_path, 'wb') as out_file:
+                    content = await invoice_image.read()
+                    await out_file.write(content)
+                logger.info(f"Invoice image saved successfully: {file_path}")
+            except IOError as e:
+                logger.error(f"Error saving invoice image: {e}")
+                raise RuntimeError(f"Error saving invoice image: {e}") from e
+
         db_expense = ExpenseModel(
             subject=expense.subject,
             expense_date=expense.expense_date,
             reimbursable=expense.reimbursable,
             amount=expense.amount,
             description=expense.description,
-            invoice_image=expense.invoice_image,
+            invoice_image=image_filename,
             employee=expense.employee,
             category_id=expense.category_id,
             user_id=user_id,
@@ -43,7 +69,8 @@ async def create_expense(db: AsyncSession, user_id: UUID, expense: ExpenseCreate
         return db_expense
     except Exception as e:
         logger.error(f"Error creating expense: {e}")
-        raise RuntimeError("Error creating expense") from e
+        await db.rollback()  # Rollback the transaction in case of error
+        raise RuntimeError(f"Error creating expense: {e}") from e
 
 
 async def get_expense_by_id(db: AsyncSession, expense_id: UUID) -> ExpenseModel:
