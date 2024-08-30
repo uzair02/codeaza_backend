@@ -29,6 +29,11 @@ RUN pip3 install -r requirements.txt
 # Copy all files
 COPY . .
 
+# Create the Invoices directory
+RUN mkdir -p /app/Invoices
+
+# Set permissions for the Invoices directory
+RUN chmod 777 /app/Invoices
 # Copy entrypoint.sh for auto connection with account_db service
 COPY ./entrypoint.sh .
 RUN chmod +x /usr/backend/entrypoint.sh
