@@ -15,14 +15,22 @@ class ExpenseBase(BaseModel):
     expense_date: date
     amount: float = Field(..., gt=0)
     reimbursable: bool = Field(default=False)
+    invoice_image: Optional[str]
     description: Optional[str] = Field(default=None, max_length=500)
     employee: Optional[str] = Field(default=None, max_length=100)
 
-class ExpenseCreate(ExpenseBase):
+class ExpenseCreate(BaseModel):
     """
     Schema representing the fields required to create a new expense.
     Inherits: ExpenseBase: Base schema with common expense fields.
     """
+    category_id: UUID
+    subject: str = Field(..., min_length=2, max_length=100)
+    expense_date: date
+    amount: float = Field(..., gt=0)
+    reimbursable: bool = Field(default=False)
+    description: Optional[str] = Field(default=None, max_length=500)
+    employee: Optional[str] = Field(default=None, max_length=100)
 
 class ExpenseUpdate(BaseModel):
     """

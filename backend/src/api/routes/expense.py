@@ -184,24 +184,30 @@ async def get_expense_endpoint(
 )
 async def update_expense_endpoint(
     expense_id: UUID,
-    expense_update: ExpenseUpdate,
+    expense_update: str = Form(...),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    invoice_image: Optional[UploadFile] = File(None)
 ) -> ExpenseSchema:
     """
     Update an existing expense.
 
     Args:
         expense_id (UUID): The ID of the expense to update.
-        expense_update (ExpenseUpdate): The updated expense data.
-        db (Session): The database session.
+        expense_update (str): JSON string of the updated expense data.
+        current_user (User): The current authenticated user.
+        db (AsyncSession): The database session.
+        invoice_image (UploadFile, optional): The invoice image file.
 
     Returns:
         ExpenseSchema: The updated expense object.
     """
     try:
+        expense_update_data = json.loads(expense_update)
+        expense_update_obj = ExpenseUpdate(**expense_update_data)
+
         logger.info(f"Attempting to update expense with ID: {expense_id}")
-        db_expense = await update_expense(db, expense_id, expense_update)
+        db_expense = await update_expense(db, expense_id, expense_update_obj, invoice_image)
         return ExpenseSchema.from_orm(db_expense)
     except ValueError as e:
         logger.error(f"Error updating expense with ID {expense_id}: {e}")

@@ -33,7 +33,7 @@ async def create_expense(db: AsyncSession, user_id: UUID, expense: ExpenseCreate
     try:
         image_filename = None
         if invoice_image and invoice_image.filename:
-            # Use the INVOICE_UPLOAD_DIR from settings
+            
             upload_dir = config_env.INVOICE_UPLOAD_DIR
             os.makedirs(upload_dir, exist_ok=True)
 
@@ -129,7 +129,7 @@ async def get_expenses(db: AsyncSession) -> list[ExpenseModel]:
         raise RuntimeError("Error retrieving expenses") from e
 
 
-async def update_expense(db: AsyncSession, expense_id: UUID, expense_update: ExpenseUpdate) -> ExpenseModel:
+async def update_expense(db: AsyncSession, expense_id: UUID, expense_update: ExpenseUpdate, invoice_image: Optional[UploadFile] = None) -> ExpenseModel:
     """
     Update an expense by ID asynchronously.
 
@@ -163,10 +163,25 @@ async def update_expense(db: AsyncSession, expense_id: UUID, expense_update: Exp
             expense.reimbursable = expense_update.reimbursable
         if expense_update.description is not None:
             expense.description = expense_update.description
-        if expense_update.invoice_image is not None:
-            expense.invoice_image = expense_update.invoice_image
         if expense_update.employee is not None:
             expense.employee = expense_update.employee
+
+        if invoice_image and invoice_image.filename:
+            if expense.invoice_image:
+                old_file_path = os.path.join(config_env.INVOICE_UPLOAD_DIR, expense.invoice_image)
+                if os.path.exists(old_file_path):
+                    os.remove(old_file_path)
+
+            file_extension = os.path.splitext(invoice_image.filename)[1]
+            new_image_filename = f"{uuid4()}{file_extension}"
+            new_file_path = os.path.join(config_env.INVOICE_UPLOAD_DIR, new_image_filename)
+
+            async with aiofiles.open(new_file_path, 'wb') as out_file:
+                content = await invoice_image.read()
+                await out_file.write(content)
+
+            expense.invoice_image = new_image_filename
+            logger.info(f"Invoice image updated successfully: {new_file_path}")
 
         expense.updated_at = pendulum.now().naive()
 
@@ -204,6 +219,17 @@ async def delete_expense(db: AsyncSession, expense_id: UUID) -> bool:
         if not expense:
             logger.warning(f"Expense not found with ID: {expense_id}")
             raise ValueError("Expense not found")
+
+        if expense.invoice_image:
+            old_file_path = os.path.join(config_env.INVOICE_UPLOAD_DIR, expense.invoice_image)
+            try:
+                if os.path.exists(old_file_path):
+                    os.remove(old_file_path)
+                    logger.info(f"Invoice image deleted with name: {expense.invoice_image}")
+            except OSError as file_error:
+                logger.error(f"Error deleting invoice image: {file_error}")
+                raise RuntimeError("Error deleting invoice image") from file_error
+
         await db.delete(expense)
         await db.commit()
         logger.info(f"Expense deleted successfully with ID: {expense_id}")
@@ -213,4 +239,5 @@ async def delete_expense(db: AsyncSession, expense_id: UUID) -> bool:
         raise
     except Exception as e:
         logger.error(f"Error deleting expense with ID {expense_id}: {e}")
+        await db.rollback()
         raise RuntimeError("Error deleting expense") from e
