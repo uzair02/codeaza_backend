@@ -30,7 +30,7 @@ Follow these instructions to set up and run the backend application locally.
 
 1. **Clone the repository**:
    ```bash
-   git clone <repository_url>
+   git clone https://github.com/uzair02/codeaza_backend-FastAPI.git
    ```
 2. **Navigate to the project directory**:
    ```bash
